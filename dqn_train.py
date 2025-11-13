@@ -1,6 +1,6 @@
 # 环境
 from gym_env import GymEnv
-env = GymEnv('CartPole-v0')
+env = GymEnv('CartPole-v1')
 state_dim = env.state_dim[0]
 action_dim = env.action_dim
 
@@ -10,7 +10,7 @@ conf = dict(
     action_dim = action_dim,
     epsilon = 0.02,
     gamma = 1,
-    device = 'cpu'
+    device = 'cpu' # 我是尊贵的 Mac M4 用户, 可以使用 MPS 设备加速训练
 )
 agent = DQNAgent(conf)
 
@@ -73,4 +73,6 @@ plt.plot([x[0] for x in train_returns], [x[1] for x in train_returns], label = '
 plt.plot([x[0] for x in test_returns], [x[1] for x in test_returns], label = 'test')
 plt.legend()
 plt.title("CartPole")
+# 保存图片并展示
+plt.savefig('./results/dqn_cartpole.png', dpi = 300)
 plt.show()
