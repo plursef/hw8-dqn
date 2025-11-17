@@ -1,5 +1,7 @@
 tqdm
 matplotlib
-numpy
+numpy==1.23.5
+ale-py==0.8.1
 torch
-gym[atari,accept-rom-license]
+gym==0.26.2
+gym[atari]
