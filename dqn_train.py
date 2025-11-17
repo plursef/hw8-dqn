@@ -8,28 +8,30 @@ action_dim = env.action_dim
 from dqn_agent import DQNAgent
 conf = dict(
     action_dim = action_dim,
-    epsilon = 0.02,
-    gamma = 1,
-    device = 'cpu' # 我是尊贵的 Mac M4 用户, 可以使用 MPS 设备加速训练
+    epsilon_start = 1.0,
+    epsilon_end = 0.02,
+    epsilon_decay = 300,
+    gamma = 0.99,
+    device = 'cpu'
 )
 agent = DQNAgent(conf)
+agent.epsilon = conf["epsilon_start"]
 
 # 模型
 from q_network import QNetwork
-model = QNetwork(state_dim, action_dim, lr = 1e-3)
+model = QNetwork(state_dim, action_dim, lr = 3e-4)
 agent.set_model(model)
-
 
 from sample import FrameNumpy, SampleBatchNumpy
 from collections import deque
 import random
 from tqdm import tqdm
 from matplotlib import pyplot as plt
+import numpy as np
 
-# 训练流程
-buffer_size = 1000
-batch_size = 32
-episodes = 1000
+buffer_size = 2000
+batch_size = 64
+episodes = 1200
 train_returns = []
 test_returns = []
 replay_buffer = deque(maxlen = buffer_size) # 样本池
@@ -57,22 +59,39 @@ for episode in tqdm(range(episodes)):
             agent.sample_process(batch)
             agent.learn(batch)
     train_returns.append((episode, ret))
+
+    # 每 10 局测试一局
     if episode % 10 == 0:
-        # 每10局测试一局效果
         ret = 0
         obs = env.reset()
         done = False
         while not done:
-            action = agent.exploit(obs) # 最优动作
+            action = agent.exploit(obs)
             next_obs, reward, done, _ = env.step(action)
             ret += reward
             obs = next_obs
         test_returns.append((episode, ret))
 
-plt.plot([x[0] for x in train_returns], [x[1] for x in train_returns], label = 'train')
-plt.plot([x[0] for x in test_returns], [x[1] for x in test_returns], label = 'test')
+    # ---------- epsilon decay ----------
+    decay = (conf["epsilon_start"] - conf["epsilon_end"]) / conf["epsilon_decay"]
+    agent.epsilon = max(conf["epsilon_end"], agent.epsilon - decay)
+    # -----------------------------------
+
+# 绘图
+plt.plot([x[0] for x in train_returns], [x[1] for x in train_returns], label='train')
+plt.plot([x[0] for x in test_returns], [x[1] for x in test_returns], label='test')
 plt.legend()
-plt.title("CartPole")
-# 保存图片并展示
-plt.savefig('./results/dqn_cartpole.png', dpi = 300)
+plt.title("CartPole DQN")
+plt.savefig('./results/cartpole.png', dpi=300)
+plt.show()
+
+# 平滑版
+window_size = 10
+train_smooth = [np.mean([x[1] for x in train_returns[max(0, i - window_size + 1):i + 1]]) for i in range(len(train_returns))]
+test_smooth = [np.mean([x[1] for x in test_returns[max(0, i - window_size + 1):i + 1]]) for i in range(len(test_returns))]
+plt.plot([x[0] for x in train_returns], train_smooth, label = 'train smoothed')
+plt.plot([x[0] for x in test_returns], test_smooth, label = 'test smoothed')
+plt.legend()
+plt.title("CartPole Dueling DQN Smoothed")
+plt.savefig('./results/dqn_cartpole_dueling_smoothed.png', dpi = 300)
 plt.show()
