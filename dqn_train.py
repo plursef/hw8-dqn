@@ -1,7 +1,14 @@
 # 环境
 from gym_env import GymEnv
+# ===== 切换环境 =====
+# CartPole (向量输入):
 env = GymEnv('CartPole-v1')
-state_dim = env.state_dim[0]
+# Breakout (图像输入):
+# from gym_env import BreakoutEnv
+# env = BreakoutEnv()
+# ====================
+
+state_dim = env.state_dim[0] if isinstance(env.state_dim, tuple) and len(env.state_dim) == 1 else env.state_dim
 action_dim = env.action_dim
 
 # 算法
@@ -78,6 +85,8 @@ for episode in tqdm(range(episodes)):
     # -----------------------------------
 
 # 绘图
+import os
+os.makedirs('./results', exist_ok=True)
 plt.plot([x[0] for x in train_returns], [x[1] for x in train_returns], label='train')
 plt.plot([x[0] for x in test_returns], [x[1] for x in test_returns], label='test')
 plt.legend()

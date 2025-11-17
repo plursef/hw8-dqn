@@ -1,5 +1,5 @@
 from env import Env
-import gymnasium as gym
+import gym
 
 class GymEnv(Env):
 
